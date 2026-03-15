@@ -16,13 +16,36 @@ import time
 # - 问题13：趋势优先于MR，ADX 20-25区间以趋势信号为准（position==1检���在前）
 # - 注：牛市仓位2x为设计意图（隐性杠杆），未计融资成本，汇报时需说明
 
-STABLE_YIELD = 0.05/365
+STABLE_YIELD   = 0.05/365
+LENDING_YIELD  = 0.08/365   # 稳定币借贷 8%/年
+FUNDING_THRESH = 0.00005    # 0.005%/次，低于此切借贷
 SYMS = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','AVAXUSDT']
 
 t0 = time.time()
 data = fetch_all_symbols(symbols=SYMBOLS_TOP30, use_cache=True)
 funding = fetch_funding_all(symbols=SYMBOLS_TOP30, use_cache=True)
 panel = build_panel(data, funding_data=funding, min_history_days=60)
+
+# 预计算资金费率序列（shift(1)防���来函数）
+def get_funding_series(sym):
+    try:
+        return panel.xs(sym, level='symbol')['funding_rate'].shift(1).fillna(0)
+    except Exception:
+        return pd.Series(dtype=float)
+
+funding_series = {sym: get_funding_series(sym) for sym in SYMS}
+
+def get_bear_return(date):
+    """熊市期间动态费率套利日收益（市场中性）"""
+    daily_rets = []
+    for sym in SYMS:
+        fr   = funding_series[sym]
+        rate = fr.loc[date] if date in fr.index else 0.0
+        if abs(rate) < FUNDING_THRESH:
+            daily_rets.append(LENDING_YIELD)   # 切稳定币借贷 8%/年
+        else:
+            daily_rets.append(abs(rate) * 3)   # 套利收益（无论正负费率）
+    return float(np.mean(daily_rets)) if daily_rets else LENDING_YIELD
 
 btc_close = data['BTCUSDT']['close']
 btc_ma200 = btc_close.rolling(200).mean()
@@ -101,7 +124,8 @@ def run_sym(sym, base_w=0.2, start=None, bull_market=None,
         else:
             cum_ret = 0.0
         if not btc_ok:
-            rets.append(STABLE_YIELD*base_w)
+            # 熊市：动态资金费率套利（替换原STABLE_YIELD）
+            rets.append(get_bear_return(date) * base_w)
             continue
         # 趋势优先（问题13）：position==1检查在MR之前
         if row['position'] == 1:

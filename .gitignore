@@ -23,3 +23,9 @@ build/
 
 # Memory (local state)
 memory/
+
+# API Keys - NEVER commit
+okx_config.py
+*_config.py
+.env
+

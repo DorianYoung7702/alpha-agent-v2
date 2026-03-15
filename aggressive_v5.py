@@ -32,9 +32,10 @@ SYMS = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','AVAXUSDT']
 EMA_FAST = 20
 EMA_SLOW = 60
 ADX_BASE = 35   # Expert批准参数
+ATR_MULT = 0.8  # Expert最终选���：ATR=0.8（非端点，过拟合风险更低）
 
 # 仓位上限（Expert指令 2026-03-15）
-MAX_SINGLE_WEIGHT = 0.30  # 单币最大30%
+MAX_SINGLE_WEIGHT = 0.30  # ���币最大30%
 MAX_TOTAL_WEIGHT  = 1.50  # 总仓位最大150%
 
 t0 = time.time()
@@ -106,8 +107,8 @@ def make_mr_sig(sym):
 def run_sym(sym, base_w=0.2, start=None):
     ema_sig = make_ema_sig(sym)
     mr_sig  = make_mr_sig(sym)
-    engine_e = TimeSeriesEngine(atr_mult=1.0, use_atr_stop=True)
-    engine_m = TimeSeriesEngine(atr_mult=1.0, use_atr_stop=True)
+    engine_e = TimeSeriesEngine(atr_mult=ATR_MULT, use_atr_stop=True)
+    engine_m = TimeSeriesEngine(atr_mult=ATR_MULT, use_atr_stop=True)
     r_ema = engine_e.run(ema_sig, data[sym], start_date=start)
     r_mr  = engine_m.run(mr_sig,  data[sym], start_date=start)
     if not isinstance(r_ema, pd.DataFrame) or r_ema.empty:
@@ -186,7 +187,7 @@ def report(ret, label):
 
 
 if __name__ == '__main__':
-    print(f'EMA{EMA_FAST}/{EMA_SLOW} + ADX{ADX_BASE} 策略回测...')
+    print(f'EMA{EMA_FAST}/{EMA_SLOW} + ADX{ADX_BASE} + ATR{ATR_MULT} 策略回测...')
     ret = run_portfolio('2020-01-01')
     m, mo = report(ret, f'v2.0 EMA{EMA_FAST}/{EMA_SLOW} 激进版')
     print(f'\nTotal: {time.time()-t0:.1f}s')

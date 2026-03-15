@@ -2,26 +2,28 @@
 __pycache__/
 *.py[cod]
 *.pyo
-.Python
 *.egg-info/
 dist/
 build/
 
-# Data & Cache
+# Data (large binary files - use shared cache)
 data/
-*.csv
-*.pkl
-*.parquet
-cache/
 
-# Reports (large files)
+# Reports
 reports/*.png
+output/
+
+# Logs
+logs/
+*.log
 
 # Env
 .env
-*.log
 
 # IDE
 .vscode/
 .idea/
 *.swp
+
+# Memory (local state)
+memory/

@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+
+# Data & Cache
+data/
+*.csv
+*.pkl
+*.parquet
+cache/
+
+# Reports (large files)
+reports/*.png
+
+# Env
+.env
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp

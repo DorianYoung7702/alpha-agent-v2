@@ -9,8 +9,7 @@ build/
 # Data (large binary files - use shared cache)
 data/
 
-# Reports
-reports/*.png
+# Output
 output/
 
 # Logs

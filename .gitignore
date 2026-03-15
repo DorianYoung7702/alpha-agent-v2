@@ -1,20 +1,17 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.egg-info/
-dist/
-build/
-
-# Data (large binary files - use shared cache)
-data/
-
 # Output
 output/
 
 # Logs
 logs/
 *.log
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
 
 # Env
 .env

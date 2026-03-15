@@ -31,7 +31,11 @@ SYMS = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','AVAXUSDT']
 # EMA参数
 EMA_FAST = 20
 EMA_SLOW = 60
-ADX_BASE = 20   # 比原版35更宽松，提升持仓时间
+ADX_BASE = 35   # Expert批准参数
+
+# 仓位上限（Expert指令 2026-03-15）
+MAX_SINGLE_WEIGHT = 0.30  # 单币最大30%
+MAX_TOTAL_WEIGHT  = 1.50  # 总仓位最大150%
 
 t0 = time.time()
 data    = fetch_all_symbols(symbols=SYMBOLS_TOP30, use_cache=True)
@@ -124,10 +128,11 @@ def run_sym(sym, base_w=0.2, start=None):
             continue
 
         if row['position'] == 1:
-            # 趋势持仓（动量加仓）
+            # 趋势持仓（动量加仓，单币上限30%）
             cum_ret += row['return']
             if cum_ret > 0.05:
-                w = min(w * 1.5, base_w * 2.5)
+                w = min(w * 1.5, MAX_SINGLE_WEIGHT)
+            w = min(w, MAX_SINGLE_WEIGHT)  # 强制单币上限
             rets.append(row['return'] * w)
         elif adx_val < 20 and date in r_mr.index and r_mr.loc[date, 'position'] == 1:
             # 超低ADX（震荡市）：BB均值回归
@@ -142,7 +147,14 @@ def run_sym(sym, base_w=0.2, start=None):
 
 def run_portfolio(start='2020-01-01'):
     all_rets = [run_sym(s, 0.2, start) for s in SYMS]
-    return pd.concat([r for r in all_rets if not r.empty], axis=1).fillna(0).sum(axis=1)
+    valid = [r for r in all_rets if not r.empty]
+    if not valid: return pd.Series(dtype=float)
+    combined = pd.concat(valid, axis=1).fillna(0)
+    # 总仓位压缩：如合计超过MAX_TOTAL_WEIGHT则等比压缩
+    daily_total_w = combined.abs().sum(axis=1)
+    scale = daily_total_w.apply(lambda x: min(1.0, MAX_TOTAL_WEIGHT / x) if x > MAX_TOTAL_WEIGHT else 1.0)
+    combined = combined.multiply(scale, axis=0)
+    return combined.sum(axis=1)
 
 
 def report(ret, label):
